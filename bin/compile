@@ -4,6 +4,11 @@
 # usage: bin/compile <build-dir> <cache-dir>
 
 set -e
+
+echo "$0"
+echo "$1"
+echo "$2"
+
 home_dir=$(cd $(dirname $(dirname $0)); pwd)
 mkdir -p "$1" "$2"
 
@@ -62,7 +67,8 @@ PATH=/app/otp/bin:$PATH
 export PATH
 
 cd $build_dir
-
+echo $(pwd)
+echo $(ls)
 # Does rebar3 already exist?
 if [ ! -e "rebar3" ]; then
   echo "-----> Installing Rebar from buildpack"
@@ -84,4 +90,3 @@ if [ -f ${home_dir}/opt/otp.sh ]; then
 fi
 
 echo "-----> Build succeeded"
-
