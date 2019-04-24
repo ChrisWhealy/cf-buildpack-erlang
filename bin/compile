@@ -57,7 +57,7 @@ echo "-----> Using Erlang/OTP $ver"
 
 echo "-------> Unpacking Erlang/OTP ${cache_dir}/${tarball}"
 mkdir -p ${ERLROOT}
-tar xvzf ${cache_dir}/${tarball} -C ${ERLROOT} --strip-components=1
+tar zxf ${cache_dir}/${tarball} -C ${ERLROOT} --strip-components=1
 
 echo "-------> Installing Erlang/OTP $ver"
 ln -s ${ERLROOT} /app/otp
@@ -69,6 +69,7 @@ export PATH
 cd $build_dir
 echo $(pwd)
 echo $(ls)
+echo $(ls _build)
 # Does rebar3 already exist?
 if [ ! -e "rebar3" ]; then
   echo "-----> Installing Rebar from buildpack"
