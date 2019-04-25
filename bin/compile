@@ -69,7 +69,7 @@ export PATH
 cd $build_dir
 echo $(pwd)
 echo $(ls)
-echo $(ls _build)
+
 # Does rebar3 already exist?
 if [ ! -e "rebar3" ]; then
   echo "-----> Installing Rebar from buildpack"
