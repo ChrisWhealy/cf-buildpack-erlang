@@ -1,7 +1,24 @@
 #!/bin/bash
 
 ##
-# usage: bin/compile <build-dir> <cache-dir>
+# usage: bin/compile <build-dir> <cache-dir> <env-dir>
+
+join_by() { 
+  local IFS="$1"; shift; echo "$*"; 
+}
+
+export_env_dir() {
+  env_dir=$1
+  whitelist_regex=${2:-''}
+  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH)$'}
+  if [ -d "$env_dir" ]; then
+    for e in $(ls $env_dir); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat $env_dir/$e)"
+      :
+    done
+  fi
+}
 
 set -e
 
@@ -17,6 +34,13 @@ test -z ${build_dir} && exit
 
 cache_dir=$(cd "$2/" && pwd)
 test -z ${cache_dir} && exit
+
+if [ -f ${build_dir}/.env-export ]; then
+  echo "Export config variables to build environment"
+  envs=$(join_by "|" $(cat ${build_dir}/.env-export | xargs))
+  envs="^($envs)$"
+  export_env_dir $3 $envs
+fi
 
 DEFAULT_OTP_VERSION="20.1"
 
