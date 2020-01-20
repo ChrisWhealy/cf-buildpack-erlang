@@ -9,7 +9,17 @@ The following updates have been made:
 
 * Erlang tarballs are downloaded from Heroku Cedar 14 stack
 * Rebar3 is used instead of Rebar2.x
-* Default Erlang OTP version is now `20.1`, not `master`.
+* Default Erlang OTP version is now `20.1`, not `master`
+* Config variables can be exported to the build environment
+* Rebar3 version can be selected
+
+### Export config variables to the build environment
+
+Names of the config variables to be exported during build time are obtained from a dot file called `.env-export`. 
+Names should be divided by the new line separator. If file is missing or empty no variables are exported.
+
+To make config variable f.e. REBAR_PROFILE available during the compilation do the following.
+Add the variable with `heroku config:set REBAR_PROFILE=prod`. Then add the `REBAR_PROFILE` string to the `.env-export` file.
 
 ### Select an Erlang version
 
@@ -20,6 +30,16 @@ If this file can be found in the root directory of your repo, it must contain on
 #### Example
 
 If your `.preferred_otp_version` file contains `19.2`, then the file `OTP-19.2.tar.gz` will be downloaded from `https://s3.amazonaws.com/heroku-buildpack-elixir/erlang/cedar-14/`.
+
+### Select a Rebar3 version
+
+The Rebar3 release version that will be used to build and run your application is now obtained from a dot file called `.preferred_rebar3_version`.  If this file is missing, the OTP version will default to `3.6.2`.
+
+If this file can be found in the root directory of your repo, it must contain only the Rebar3 version number you require. Pre-compiled binaries are listed here https://github.com/erlang/rebar3/releases .
+
+#### Example
+
+If your `.preferred_rebar3_version` file contains `3.13.0`, then the file will be downloaded from `https://github.com/erlang/rebar3/releases/download/3.13.0/rebar3`.
 
 ### Create an Erlang Release
 

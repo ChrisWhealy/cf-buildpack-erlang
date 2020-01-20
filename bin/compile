@@ -1,9 +1,31 @@
 #!/bin/bash
 
 ##
-# usage: bin/compile <build-dir> <cache-dir>
+# usage: bin/compile <build-dir> <cache-dir> <env-dir>
+
+join_by() { 
+  local IFS="$1"; shift; echo "$*"; 
+}
+
+export_env_dir() {
+  env_dir=$1
+  whitelist_regex=${2:-''}
+  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH)$'}
+  if [ -d "$env_dir" ]; then
+    for e in $(ls $env_dir); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat $env_dir/$e)"
+      :
+    done
+  fi
+}
 
 set -e
+
+echo "$0"
+echo "$1"
+echo "$2"
+
 home_dir=$(cd $(dirname $(dirname $0)); pwd)
 mkdir -p "$1" "$2"
 
@@ -12,6 +34,13 @@ test -z ${build_dir} && exit
 
 cache_dir=$(cd "$2/" && pwd)
 test -z ${cache_dir} && exit
+
+if [ -f ${build_dir}/.env-export ]; then
+  echo "Export config variables to build environment"
+  envs=$(join_by "|" $(cat ${build_dir}/.env-export | xargs))
+  envs="^($envs)$"
+  export_env_dir $3 $envs
+fi
 
 DEFAULT_OTP_VERSION="20.1"
 
@@ -23,6 +52,15 @@ ver=${OTP_VERSION:=${DEFAULT_OTP_VERSION}}
 tarball=OTP-${ver}.tar.gz
 OTP_TARBALL_URL="https://s3.amazonaws.com/heroku-buildpack-elixir/erlang/cedar-14/${tarball}"
 
+DEFAULT_REBAR_VERSION="3.6.2"
+
+if [ -f ${build_dir}/.preferred_rebar3_version ]; then
+  REBAR_VERSION=$(cat ${build_dir}/.preferred_rebar3_version)
+fi
+rebar_ver=${REBAR_VERSION:=${DEFAULT_REBAR_VERSION}}
+REBAR_BIN_URL="https://github.com/erlang/rebar3/releases/download/${rebar_ver}/rebar3"
+
+
 ERLROOT=${build_dir}/otp
 PROFILE=${build_dir}/.profile.d
 
@@ -32,7 +70,8 @@ echo "Build directory = ${build_dir}"
 echo "Erlang root = ${ERLROOT}"
 echo "Cache directory = ${cache_dir}"
 echo "Erlang OTP version = ${ver}"
-echo "Precompiled binary URL = ${OTP_TARBALL_URL}"
+echo "Precompiled OTP binary URL = ${OTP_TARBALL_URL}"
+echo "Precompiled Rebar3 binary URL = ${REBAR_BIN_URL}"
 
 echo "-----> Using Erlang/OTP $ver"
 
@@ -62,11 +101,14 @@ PATH=/app/otp/bin:$PATH
 export PATH
 
 cd $build_dir
+echo $(pwd)
+echo $(ls)
 
 # Does rebar3 already exist?
 if [ ! -e "rebar3" ]; then
-  echo "-----> Installing Rebar from buildpack"
-  cp ${home_dir}/opt/rebar3 ./
+  echo "-----> Download Rebar from GitHub"
+  curl -L -o rebar3 $REBAR_BIN_URL
+  chmod +x rebar3
 fi
 
 echo "-----> Building with Rebar3"
@@ -84,4 +126,3 @@ if [ -f ${home_dir}/opt/otp.sh ]; then
 fi
 
 echo "-----> Build succeeded"
-
